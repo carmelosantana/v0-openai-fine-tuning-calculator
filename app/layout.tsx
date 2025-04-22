@@ -1,6 +1,9 @@
 import type React from "react"
 import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/toaster"
+import { Footer } from "@/components/footer"
+import { GitHubLink } from "@/components/github-link"
 
 export default function RootLayout({
   children,
@@ -13,9 +16,12 @@ export default function RootLayout({
         <title>OpenAI Fine-Tuning Calculator</title>
         <meta name="description" content="Calculate the cost of fine-tuning OpenAI models" />
       </head>
-      <body>
+      <body className="min-h-screen flex flex-col relative">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <main className="min-h-screen bg-background">{children}</main>
+          <GitHubLink />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -8,11 +8,18 @@ import { Slider } from "@/components/ui/slider"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Calculator, Info } from "lucide-react"
+import { Calculator, Info, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useToast } from "@/hooks/use-toast"
+import { useSearchParams, useRouter } from "next/navigation"
+import TokenAnalyzer from "@/components/token-analyzer"
 
 export default function FineTuningCalculator() {
+  const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   // Model pricing data
   const models = {
     "gpt-4.1": {
@@ -62,6 +69,27 @@ export default function FineTuningCalculator() {
   const [inferenceOutputCost, setInferenceOutputCost] = useState(0)
   const [activeTab, setActiveTab] = useState("calculator")
 
+  // Load state from URL parameters if present
+  useEffect(() => {
+    if (searchParams) {
+      const model = searchParams.get("model")
+      const input = searchParams.get("input")
+      const output = searchParams.get("output")
+      const ep = searchParams.get("epochs")
+      const cached = searchParams.get("cached")
+      const batch = searchParams.get("batch")
+      const tab = searchParams.get("tab")
+
+      if (model && models[model]) setSelectedModel(model)
+      if (input) setInputTokens(Number.parseInt(input))
+      if (output) setOutputTokens(Number.parseInt(output))
+      if (ep) setEpochs(Number.parseInt(ep))
+      if (cached) setUseCachedInput(cached === "true")
+      if (batch) setBatchApi(batch === "true")
+      if (tab) setActiveTab(tab)
+    }
+  }, [searchParams])
+
   // Calculate costs
   useEffect(() => {
     const model = models[selectedModel]
@@ -97,8 +125,34 @@ export default function FineTuningCalculator() {
     }).format(amount)
   }
 
+  // Generate share link
+  const generateShareLink = () => {
+    const baseUrl = window.location.origin + window.location.pathname
+    const params = new URLSearchParams()
+
+    params.set("model", selectedModel)
+    params.set("input", inputTokens.toString())
+    params.set("output", outputTokens.toString())
+    params.set("epochs", epochs.toString())
+    params.set("cached", useCachedInput.toString())
+    params.set("batch", batchApi.toString())
+    params.set("tab", activeTab)
+
+    return `${baseUrl}?${params.toString()}`
+  }
+
+  // Copy share link to clipboard
+  const copyShareLink = () => {
+    const link = generateShareLink()
+    navigator.clipboard.writeText(link)
+    toast({
+      title: "Link copied!",
+      description: "Share link has been copied to clipboard",
+    })
+  }
+
   return (
-    <div className="container mx-auto py-10 px-4">
+    <div className="container mx-auto py-10 px-4 mb-4">
       <div className="flex flex-col items-center justify-center mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center">
           <Calculator className="mr-2" /> OpenAI Fine-Tuning Calculator
@@ -109,18 +163,25 @@ export default function FineTuningCalculator() {
         </p>
       </div>
 
-      <Tabs defaultValue="calculator" className="max-w-4xl mx-auto" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2 mb-6">
+      <Tabs defaultValue={activeTab} className="max-w-4xl mx-auto" onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3 mb-6">
           <TabsTrigger value="calculator">Calculator</TabsTrigger>
+          <TabsTrigger value="token-analyzer">Token Analyzer</TabsTrigger>
           <TabsTrigger value="about">About Fine-Tuning</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calculator" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Parameters</CardTitle>
-                <CardDescription>Adjust the parameters to calculate your fine-tuning costs</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div>
+                  <CardTitle>Parameters</CardTitle>
+                  <CardDescription>Adjust the parameters to calculate your fine-tuning costs</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={copyShareLink} className="flex items-center gap-1">
+                  <Share2 className="h-4 w-4" />
+                  <span>Share</span>
+                </Button>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -209,7 +270,7 @@ export default function FineTuningCalculator() {
                           onChange={(e) => setEpochs(Number.parseInt(e.target.value) || 1)}
                           className="w-24 mr-2"
                           min={1}
-                          max={10}
+                          max={20}
                         />
                         <span className="text-sm text-muted-foreground">epochs</span>
                       </div>
@@ -217,15 +278,15 @@ export default function FineTuningCalculator() {
                     <Slider
                       id="epochs"
                       min={1}
-                      max={10}
+                      max={20}
                       step={1}
                       value={[epochs]}
                       onValueChange={(value) => setEpochs(value[0])}
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
                       <span>1</span>
-                      <span>5</span>
                       <span>10</span>
+                      <span>20</span>
                     </div>
                   </div>
 
@@ -332,6 +393,10 @@ export default function FineTuningCalculator() {
               </CardFooter>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="token-analyzer">
+          <TokenAnalyzer />
         </TabsContent>
 
         <TabsContent value="about">
