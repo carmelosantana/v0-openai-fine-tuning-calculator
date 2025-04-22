@@ -151,6 +151,12 @@ export default function FineTuningCalculator() {
     })
   }
 
+  // Handle token count from analyzer
+  const handleTokensFromAnalyzer = (tokenCount: number) => {
+    setInputTokens(tokenCount)
+    setActiveTab("calculator")
+  }
+
   return (
     <div className="container mx-auto py-10 px-4 mb-4">
       <div className="flex flex-col items-center justify-center mb-8">
@@ -163,7 +169,7 @@ export default function FineTuningCalculator() {
         </p>
       </div>
 
-      <Tabs defaultValue={activeTab} className="max-w-4xl mx-auto" onValueChange={setActiveTab}>
+      <Tabs value={activeTab} className="max-w-4xl mx-auto" onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3 mb-6">
           <TabsTrigger value="calculator">Calculator</TabsTrigger>
           <TabsTrigger value="token-analyzer">Token Analyzer</TabsTrigger>
@@ -396,7 +402,7 @@ export default function FineTuningCalculator() {
         </TabsContent>
 
         <TabsContent value="token-analyzer">
-          <TokenAnalyzer />
+          <TokenAnalyzer onSendToCalculator={handleTokensFromAnalyzer} />
         </TabsContent>
 
         <TabsContent value="about">

@@ -6,14 +6,18 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { FileText, Copy, Loader2 } from "lucide-react"
+import { FileText, Copy, Loader2, Calculator } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-export default function TokenAnalyzer() {
+interface TokenAnalyzerProps {
+  onSendToCalculator?: (tokenCount: number) => void
+}
+
+export default function TokenAnalyzer({ onSendToCalculator }: TokenAnalyzerProps) {
   const { toast } = useToast()
   const [text, setText] = useState("")
   const [model, setModel] = useState("gpt-4o")
-  const [tokenCount, setTokenCount] = useState(null)
+  const [tokenCount, setTokenCount] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -76,6 +80,22 @@ export default function TokenAnalyzer() {
     setTokenCount(null)
   }
 
+  const handleSendToCalculator = () => {
+    if (tokenCount !== null && onSendToCalculator) {
+      onSendToCalculator(tokenCount)
+      toast({
+        title: "Sent to calculator",
+        description: `${tokenCount} tokens sent to the calculator`,
+      })
+    } else {
+      toast({
+        title: "No tokens to send",
+        description: "Please count tokens first",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -134,15 +154,25 @@ export default function TokenAnalyzer() {
             <Copy className="h-4 w-4 mr-1" /> Copy
           </Button>
         </div>
-        <Button onClick={analyzeTokens} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Counting...
-            </>
-          ) : (
-            "Count Tokens"
-          )}
-        </Button>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            onClick={handleSendToCalculator}
+            disabled={tokenCount === null}
+            className="flex items-center"
+          >
+            <Calculator className="h-4 w-4 mr-1" /> Send to Calculator
+          </Button>
+          <Button onClick={analyzeTokens} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Counting...
+              </>
+            ) : (
+              "Count Tokens"
+            )}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )
